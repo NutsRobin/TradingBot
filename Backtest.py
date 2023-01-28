@@ -1,6 +1,7 @@
 import datetime as dt
 import matplotlib.pyplot as plt
 import pandas_datareader as pdr
+import pandas as pd
 import yfinance as yf
 
 plt.style.use("dark_background")
@@ -9,7 +10,6 @@ buy_signals = []
 sell_signals = []
 balance = 1000.00
 eth_bal = 0.0
-
 
 start_date = dt.datetime.now() - dt.timedelta(days=90)
 end_date = dt.datetime.now()
@@ -23,6 +23,29 @@ def calc_rsi(rs):
     rsi = 100 - (100/(1+rs))
     return rsi
 
+def analyze_trades(trades):
+    trade_df = pd.DataFrame(trades, columns=['buy_price', 'sell_price', 'difference'])
+    
+
+    num_trades = len(trade_df)
+    avg_trade_val = trade_df['difference'].mean()
+
+    gains = trade_df[(trade_df['difference'] > 0)]
+    perc_gain = float(len(gains)/len(trade_df))
+    avg_gain = gains['difference'].mean()
+    max_gain = gains['difference'].max()
+    min_gain = gains['difference'].min()
+
+    losses = trade_df[(trade_df['difference'] < 0)]
+    perc_loss = float(len(losses)/len(trade_df))
+    avg_loss = losses['difference'].mean()
+    max_loss = losses['difference'].max()
+    min_loss = losses['difference'].min()
+
+    print(f'{trade_df}\nNumber of Trades: {num_trades}\nAverage Trade Value: {avg_trade_val}\n')
+    print(f'Gain%: {perc_gain}\nAverage Gain: {avg_gain}\nMax Gain: {max_gain}\nMin Gain: {min_gain}\n')
+    print(f'Loss%: {perc_loss}\nAverage Loss: {avg_loss}\nMax Loss: {max_loss}\nMin Loss: {min_loss}') 
+
 # Uses RSI interval to determine when to buy/sell #
 def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     diff = 0
@@ -32,7 +55,7 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     loss = 0
     trigger = -1
     rsi_vals = []
-    trades = 0
+    trades = []
 
     for x in range(1, len(df)):
         curr_price = df['Adj Close'].iloc[x]
@@ -69,21 +92,18 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
                 buy_signals.append(df['Adj Close'].iloc[x])
                 sell_signals.append(float('nan'))
                 trigger = 1
+                prev_buy = balance
                 eth_bal = balance/(df['Adj Close'].iloc[x])
                 balance = 0
 
-                print(f'ETH: {eth_bal}')
-                print(f'USD: {balance}\n')
             elif rsi_vals[-1] > 80 and trigger != -1:
                 sell_signals.append(df['Adj Close'].iloc[x])
                 buy_signals.append(float('nan'))
                 trigger = -1
                 balance = eth_bal*(df['Adj Close'].iloc[x])
                 eth_bal = 0
+                trades.append([prev_buy, balance, balance-prev_buy])
 
-                print(f'ETH: {eth_bal}')
-                print(f'USD: {balance}\n')
-                trades += 1
             else:
                 buy_signals.append(float('nan'))
                 sell_signals.append(float('nan'))
@@ -97,9 +117,9 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
 
     # some calculations, will expand the info given here
     growth = (balance-1000.00)/1000
-    print(f'Final Balance: {balance}')
+    print(f'Current Account Value: {balance}')
     print(f'Total Growth: {growth} or {balance-1000.00}')
-    print(f'Num trades: {trades}')
+    analyze_trades(trades)
 
     # plots the RSI and daily adjusted close share prices
     fig, axs = plt.subplots(2)
@@ -108,7 +128,7 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     axs[0].scatter(df.index, df['Sell Signals'], label='Sell Signal', marker='v', color='#ff0000', lw=3)
     axs[1].plot(rsi_vals, label='RSI', color='pink', linestyle='--')
     axs[1].axhline(y=80, label='RSI HIGH', color='blue', linestyle='--')
-    axs[1].axhline(y=20, label='RSI LOW', color='blue', linestyle='--')
+    axs[1].axhline(y=20, label='RSI LOW', color='orange', linestyle='--')
     fig.legend(loc='upper left')
     plt.show()
 
