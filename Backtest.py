@@ -11,7 +11,7 @@ sell_signals = []
 balance = 1000.00
 eth_bal = 0.0
 
-start_date = dt.datetime.now() - dt.timedelta(days=90)
+start_date = dt.datetime.now() - dt.timedelta(days=365*4)
 end_date = dt.datetime.now()
 
 # gather data from yahoo finance from given dates #
@@ -39,8 +39,8 @@ def analyze_trades(trades):
     losses = trade_df[(trade_df['difference'] < 0)]
     perc_loss = float(len(losses)/len(trade_df))
     avg_loss = losses['difference'].mean()
-    max_loss = losses['difference'].max()
-    min_loss = losses['difference'].min()
+    max_loss = losses['difference'].min()
+    min_loss = losses['difference'].max()
 
     print(f'{trade_df}\nNumber of Trades: {num_trades}\nAverage Trade Value: {avg_trade_val}\n')
     print(f'Gain%: {perc_gain}\nAverage Gain: {avg_gain}\nMax Gain: {max_gain}\nMin Gain: {min_gain}\n')
@@ -56,6 +56,13 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     trigger = -1
     rsi_vals = []
     trades = []
+    ma_5 = 5
+    ma_200 = 200
+
+    ## Moving average calculations
+    df[f'SMA_{ma_5}'] = df['Adj Close'].rolling(window=ma_5).mean()
+    df[f'SMA_{ma_200}'] = df['Adj Close'].rolling(window=ma_200).mean()
+    df = df.iloc[ma_200:]
 
     for x in range(1, len(df)):
         curr_price = df['Adj Close'].iloc[x]
@@ -124,6 +131,8 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     # plots the RSI and daily adjusted close share prices
     fig, axs = plt.subplots(2)
     axs[0].plot(df['Adj Close'], label='Share Price', alpha=0.5)
+    axs[0].plot(df[f'SMA_{ma_200}'], label=f'SMA_{ma_200}', color='orange')
+    axs[0].plot(df[f'SMA_{ma_5}'], label=f'SMA_{ma_5}', color='purple', linestyle='--')
     axs[0].scatter(df.index, df['Buy Signals'], label='Buy Signal', marker='^', color='#00ff00', lw=3)
     axs[0].scatter(df.index, df['Sell Signals'], label='Sell Signal', marker='v', color='#ff0000', lw=3)
     axs[1].plot(rsi_vals, label='RSI', color='pink', linestyle='--')
@@ -181,3 +190,5 @@ def calc_mva(df, buy_signals, sell_signals, balance, eth_bal):
     plt.scatter(df.index, df['Sell Signals'], label='Sell Signal', marker='v', color='#ff0000', lw=3)
     plt.legend(loc='upper left')
     plt.show()
+
+#calc_mva(df, buy_signals, sell_signals, balance, eth_bal)
