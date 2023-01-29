@@ -114,6 +114,8 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
             else:
                 buy_signals.append(float('nan'))
                 sell_signals.append(float('nan'))
+
+            #if rsi_vals[-1] > 90 and trigger != 1 and df['Adj Close'].iloc[x] < df[f'SMA_{ma_200}'].iloc[x]:
     
     df = df.iloc[period+1:]
     df['Buy Signals'] = buy_signals
