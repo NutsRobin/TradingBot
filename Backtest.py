@@ -11,7 +11,7 @@ sell_signals = []
 balance = 1000.00
 eth_bal = 0.0
 
-start_date = dt.datetime.now() - dt.timedelta(days=365*4)
+start_date = dt.datetime.now() - dt.timedelta(days=365*3)
 end_date = dt.datetime.now()
 
 # gather data from yahoo finance from given dates #
@@ -95,7 +95,7 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
             rs = avg_gain/avg_loss
             rsi_vals.append(calc_rsi(rs))
 
-            if rsi_vals[-1] <= 20 and trigger != 1:
+            if rsi_vals[-1] <= 20 and trigger != 1 and df['Adj Close'].iloc[x] > df[f'SMA_{ma_200}'].iloc[x]:
                 buy_signals.append(df['Adj Close'].iloc[x])
                 sell_signals.append(float('nan'))
                 trigger = 1
@@ -103,7 +103,7 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
                 eth_bal = balance/(df['Adj Close'].iloc[x])
                 balance = 0
 
-            elif rsi_vals[-1] > 80 and trigger != -1:
+            elif rsi_vals[-1] > 80 and trigger != -1 and df['Adj Close'].iloc[x] > df[f'SMA_{ma_5}'].iloc[x]:
                 sell_signals.append(df['Adj Close'].iloc[x])
                 buy_signals.append(float('nan'))
                 trigger = -1
