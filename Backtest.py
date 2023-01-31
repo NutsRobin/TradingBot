@@ -24,7 +24,7 @@ def calc_rsi(rs):
     return rsi
 
 def analyze_trades(trades):
-    trade_df = pd.DataFrame(trades, columns=['buy_price', 'sell_price', 'difference'])
+    trade_df = pd.DataFrame(trades, columns=['buy_price', 'sell_price', 'difference', 'duration'])
     
 
     num_trades = len(trade_df)
@@ -58,6 +58,7 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     trades = []
     ma_5 = 5
     ma_200 = 200
+    day = 0
 
     ## Moving average calculations
     df[f'SMA_{ma_5}'] = df['Adj Close'].rolling(window=ma_5).mean()
@@ -102,20 +103,21 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
                 prev_buy = balance
                 eth_bal = balance/(df['Adj Close'].iloc[x])
                 balance = 0
-
+                day = x
             elif rsi_vals[-1] > 80 and trigger != -1 and df['Adj Close'].iloc[x] > df[f'SMA_{ma_5}'].iloc[x]:
                 sell_signals.append(df['Adj Close'].iloc[x])
                 buy_signals.append(float('nan'))
                 trigger = -1
                 balance = eth_bal*(df['Adj Close'].iloc[x])
                 eth_bal = 0
-                trades.append([prev_buy, balance, balance-prev_buy])
+                day_diff = x - day
+                trades.append([prev_buy, balance, balance-prev_buy, day_diff])
 
             else:
                 buy_signals.append(float('nan'))
                 sell_signals.append(float('nan'))
 
-            #if rsi_vals[-1] > 90 and trigger != 1 and df['Adj Close'].iloc[x] < df[f'SMA_{ma_200}'].iloc[x]:
+
     
     df = df.iloc[period+1:]
     df['Buy Signals'] = buy_signals
@@ -192,5 +194,4 @@ def calc_mva(df, buy_signals, sell_signals, balance, eth_bal):
     plt.scatter(df.index, df['Sell Signals'], label='Sell Signal', marker='v', color='#ff0000', lw=3)
     plt.legend(loc='upper left')
     plt.show()
-
-#calc_mva(df, buy_signals, sell_signals, balance, eth_bal)
+    
