@@ -95,7 +95,7 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
             avg_loss = ((avg_loss*(period-1)) + loss)/period
             rs = avg_gain/avg_loss
             rsi_vals.append(calc_rsi(rs))
-
+            
             if rsi_vals[-1] <= 20 and trigger != 1 and df['Adj Close'].iloc[x] > df[f'SMA_{ma_200}'].iloc[x]:
                 buy_signals.append(df['Adj Close'].iloc[x])
                 sell_signals.append(float('nan'))
@@ -129,7 +129,7 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     # some calculations, will expand the info given here
     growth = (balance-1000.00)/1000
     print(f'Current Account Value: {balance}')
-    print(f'Total Growth: {growth} or {balance-1000.00}')
+    print(f'Total Growth: {round(growth*100,2)}% or ${balance-1000.00}')
     analyze_trades(trades)
 
     # plots the RSI and daily adjusted close share prices
