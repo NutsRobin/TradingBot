@@ -54,6 +54,7 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     avg_loss = 0
     loss = 0
     trigger = -1
+    trigger_short = -2
     rsi_vals = []
     trades = []
     ma_5 = 5
@@ -63,6 +64,7 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     ## Moving average calculations
     df[f'SMA_{ma_5}'] = df['Adj Close'].rolling(window=ma_5).mean()
     df[f'SMA_{ma_200}'] = df['Adj Close'].rolling(window=ma_200).mean()
+    
     df = df.iloc[ma_200:]
 
     for x in range(1, len(df)):
@@ -96,22 +98,36 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
             rs = avg_gain/avg_loss
             rsi_vals.append(calc_rsi(rs))
             
-            if rsi_vals[-1] <= 20 and trigger != 1 and df['Adj Close'].iloc[x] > df[f'SMA_{ma_200}'].iloc[x]:
-                buy_signals.append(df['Adj Close'].iloc[x])
-                sell_signals.append(float('nan'))
-                trigger = 1
-                prev_buy = balance
-                eth_bal = balance/(df['Adj Close'].iloc[x])
-                balance = 0
-                day = x
-            elif rsi_vals[-1] > 80 and trigger != -1 and df['Adj Close'].iloc[x] > df[f'SMA_{ma_5}'].iloc[x]:
-                sell_signals.append(df['Adj Close'].iloc[x])
+            if df['Adj Close'].iloc[x] > df[f'SMA_{ma_200}'].iloc[x]:
+                if rsi_vals[-1] <= 20 and trigger != 1 and df['Adj Close'].iloc[x] > df[f'SMA_{ma_200}'].iloc[x]:
+                    buy_signals.append(df['Adj Close'].iloc[x])
+                    sell_signals.append(float('nan'))
+                    trigger = 1
+                    prev_buy = balance
+                    eth_bal = balance/(df['Adj Close'].iloc[x])
+                    balance = 0
+                    day = x
+                elif rsi_vals[-1] > 80 and trigger != -1 and df['Adj Close'].iloc[x] > df[f'SMA_{ma_5}'].iloc[x]:
+                    sell_signals.append(df['Adj Close'].iloc[x])
+                    buy_signals.append(float('nan'))
+                    trigger = -1
+                    balance = eth_bal*(df['Adj Close'].iloc[x])
+                    eth_bal = 0
+                    day_diff = x - day
+                    trades.append([prev_buy, balance, balance-prev_buy, day_diff])
+                else:
+                    buy_signals.append(float('nan'))
+                    sell_signals.append(float('nan'))
+                
+            elif df['Adj Close'].iloc[x] < df[f'SMA_{ma_200}'].iloc[x] and balance > 0:
                 buy_signals.append(float('nan'))
-                trigger = -1
-                balance = eth_bal*(df['Adj Close'].iloc[x])
-                eth_bal = 0
-                day_diff = x - day
-                trades.append([prev_buy, balance, balance-prev_buy, day_diff])
+                sell_signals.append(float('nan'))
+                if df['Adj Close'].iloc[x] < df[f'SMA_{ma_200}'].iloc[x] and trigger_short != 2 and rsi_vals[-1] > 90:
+                    print("Open Short")
+                    trigger_short = 2
+                elif rsi_vals[-1] < 10 and trigger_short != -2 and df['Adj Close'].iloc[x] < df[f'SMA_{ma_5}'].iloc[x]:
+                    print("Close Short\n")
+                    trigger_short = -2
 
             else:
                 buy_signals.append(float('nan'))
@@ -194,4 +210,3 @@ def calc_mva(df, buy_signals, sell_signals, balance, eth_bal):
     plt.scatter(df.index, df['Sell Signals'], label='Sell Signal', marker='v', color='#ff0000', lw=3)
     plt.legend(loc='upper left')
     plt.show()
-    
