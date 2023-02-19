@@ -98,7 +98,12 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
             rs = avg_gain/avg_loss
             rsi_vals.append(calc_rsi(rs))
             
+            # Long logic #
             if df['Adj Close'].iloc[x] > df[f'SMA_{ma_200}'].iloc[x]:
+                if trigger_short == 2:
+                    print("Close Short\n")
+                    trigger_short = -2
+
                 if rsi_vals[-1] <= 20 and trigger != 1 and df['Adj Close'].iloc[x] > df[f'SMA_{ma_200}'].iloc[x]:
                     buy_signals.append(df['Adj Close'].iloc[x])
                     sell_signals.append(float('nan'))
@@ -118,7 +123,8 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
                 else:
                     buy_signals.append(float('nan'))
                     sell_signals.append(float('nan'))
-                
+
+            # Short logic #   
             elif df['Adj Close'].iloc[x] < df[f'SMA_{ma_200}'].iloc[x] and balance > 0:
                 buy_signals.append(float('nan'))
                 sell_signals.append(float('nan'))
