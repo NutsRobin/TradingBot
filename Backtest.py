@@ -124,7 +124,9 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
                     buy_signals.append(float('nan'))
                     sell_signals.append(float('nan'))
 
-            # Short logic #   
+            # Short logic #
+            # does not actually test short selling, but is the start of the logic #
+            # will get to testing short selling once the long trading stategy is complete #
             elif df['Adj Close'].iloc[x] < df[f'SMA_{ma_200}'].iloc[x] and balance > 0:
                 buy_signals.append(float('nan'))
                 sell_signals.append(float('nan'))
