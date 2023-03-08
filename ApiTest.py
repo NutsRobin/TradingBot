@@ -28,3 +28,12 @@ def gen_request(url_path, data, api_key, sec):
     headers = {'API-KEY' : api_key, 'API-SIGN' : signature}
     resp = requests.post((api_url+url_path), headers=headers, data=data)
     return resp
+
+def get_account_bal():
+    return gen_request("/0/private/Balance", {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
+
+def get_curr_price():
+    currPrice = requests.get("https://api.kraken.com/0/public/Ticker?pair=ETHUSD").json()['result']['XETHZUSD']
+    return currPrice
+
+print(get_curr_price())
