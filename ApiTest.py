@@ -5,11 +5,17 @@ import urllib.parse
 import hashlib
 import hmac
 import base64
+import pykrakenapi as pyk
+import krakenex
+import matplotlib.pyplot as plt
 
 with open('keys', 'r') as k:
     keys = k.read().splitlines()
     api_key = keys[0]
     api_sec = keys[1]
+
+api = krakenex.API()
+k = pyk.KrakenAPI(api)
 
 api_url = 'https://api.kraken.com'
 
@@ -36,4 +42,21 @@ def get_curr_price():
     currPrice = requests.get("https://api.kraken.com/0/public/Ticker?pair=ETHUSD").json()['result']['XETHZUSD']
     return currPrice
 
-print(get_curr_price())
+
+
+ohlc = k.get_ohlc_data('ETHUSD', interval=1440, ascending = True)
+
+ohlc[0][f'SMA_{200}'] = ohlc[0]['close'].rolling(window=200).mean()
+ohlc[0][f'SMA_{5}'] = ohlc[0]['close'].rolling(window=5).mean()
+
+#print(ohlc[0].tail())
+
+
+
+#plt.style.use('dark_background')
+#fig, axs = plt.subplots(2)
+#axs[0].plot(ohlc[0]['close'], label='Share Price', alpha=0.5)
+#axs[0].plot(ohlc[0][f'SMA_{200}'], label=f'SMA_{200}', color='orange')
+#axs[0].plot(ohlc[0][f'SMA_{5}'], label=f'SMA_{5}', color='purple', linestyle='--')
+#fig.legend(loc='upper left')
+#plt.show()
