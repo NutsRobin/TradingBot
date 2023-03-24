@@ -68,8 +68,11 @@ def rsi_2(ohlc):
             if (x == period):
                 avg_gain = gain/x
                 avg_loss = loss/x
-                rs = avg_gain/avg_loss
-                rsi_vals.append(calc_rsi(rs))
+                if avg_loss == 0:
+                    rsi_vals.append(100)
+                else: 
+                    rs = avg_gain/avg_loss
+                    rsi_vals.append(calc_rsi(rs))
 
         else:
             if (diff < 0):
