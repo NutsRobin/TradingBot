@@ -9,16 +9,10 @@ import pykrakenapi as pyk
 import krakenex
 import matplotlib.pyplot as plt
 
-with open('papertest/keys', 'r') as k:
-    keys = k.read().splitlines()
-    api_key = keys[0]
-    api_sec = keys[1]
-
-api = krakenex.API()
-k = pyk.KrakenAPI(api)
-
-api_url = 'https://api.kraken.com'
-
+"""
+kraken_signature is used for verification with the kraken api
+https://docs.kraken.com/rest/#section/Authentication/Headers-and-Signature
+"""
 def kraken_signature(url_path, data, sec):
     postdata = urllib.parse.urlencode(data)
     encoded = (str(data['nonce']) + postdata).encode()
@@ -29,23 +23,57 @@ def kraken_signature(url_path, data, sec):
     return sig_digest.decode()
 
 
+"""
+gen_request is the base function for the more specific api request functions
+
+url_path: path for request
+data: required data for the request
+api_key: kraken api key
+sec: the api_sec that is generated with the api key
+return: a kraken response
+"""
 def gen_request(url_path, data, api_key, sec):
     signature = kraken_signature(url_path, data, sec)
     headers = {'API-KEY' : api_key, 'API-SIGN' : signature}
     resp = requests.post((api_url+url_path), headers=headers, data=data)
     return resp
 
+"""
+get_account_bal is used to gather balances on the kraken account
+
+return: kraken resp containing account balances or an error
+"""
 def get_account_bal():
     return gen_request("/0/private/Balance", {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
 
+
+"""
+get_curr_price requests the current price of Ethereum in USD
+
+return: value of ETH in USD or error
+"""
 def get_curr_price():
     currPrice = requests.get("https://api.kraken.com/0/public/Ticker?pair=ETHUSD").json()['result']['XETHZUSD']
     return currPrice
 
+
+"""
+calc_rsi is used to calculate a rsi value with the given rs value
+
+rs: ((average gain * period-1) + curr_gain)/((average loss * period-1) + current loss)
+return: a Relative Strength Index value
+"""
 def calc_rsi(rs):
     rsi = 100 - (100/(1+rs))
     return rsi
 
+
+"""
+rsi_2 calculates a 2 day period Relative Strength Index based on each given day's closing value
+
+ohlc: kraken historical data as a pandas dataframe
+return: list of RSI values ordered by date
+"""
 def rsi_2(ohlc):
     period = 2
     gain = 0
@@ -90,6 +118,16 @@ def rsi_2(ohlc):
     return rsi_vals
 
 
+with open('papertest/keys', 'r') as k:
+    keys = k.read().splitlines()
+    api_key = keys[0]
+    api_sec = keys[1]
+
+api = krakenex.API()
+k = pyk.KrakenAPI(api)
+
+api_url = 'https://api.kraken.com'
+
 # get public historical data
 try:
     ohlc = k.get_ohlc_data('ETHUSD', interval=1440, ascending = True,)
@@ -128,6 +166,7 @@ while (1):
 
 print(ohlc[0].head())
 
+# plot moving averages, RSI, and closing value
 plt.style.use('dark_background')
 fig, axs = plt.subplots(2)
 axs[0].plot(ohlc[0]['close'], label='Share Price', alpha=0.5)

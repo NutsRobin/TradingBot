@@ -6,6 +6,11 @@ import yfinance as yf
 import sys
 import Strategies as strat
 
+"""
+handle_args is to ensure proper usage of Backtest.py arguments
+
+return: return the argument if it is valid
+"""
 def handle_args():
     if (len(sys.argv) != 2):
         sys.exit('Invalid usage\nUsage: python3 Backtest.py [strategy]')

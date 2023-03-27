@@ -5,6 +5,18 @@ import matplotlib.pyplot as plt
 
 strats = set(('rsi-2', 'standard-mva'))
 
+"""
+rsi_strat implements a Relative Strength Index based trading strategy.
+For each date it plots the adjusted close, buy signals, sell signals,
+moving averages, and RSI.
+
+df: pandas dataframe of historical data
+period: the time period (in days) to measure RSI
+buy_signals: list of signals denoting when to buy; ordered by date
+sell_signlas: list of signals denoting when to sell; ordered by date
+balance: account balance in USD
+eth_balance: account balance in ETH
+"""
 def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     diff = 0
     gain = 0
@@ -127,6 +139,17 @@ def rsi_strat(df, period, buy_signals, sell_signals, balance, eth_bal):
     fig.legend(loc='upper left')
     plt.show()
 
+
+"""
+std_mva implements a very basic moving average crossover strategy.
+This was used strictly for testing purposes
+
+df: pandas dataframe of historical data
+buy_signals: list of signals denoting when to buy; ordered by date
+sell_signlas: list of signals denoting when to sell; ordered by date
+balance: account balance in USD
+eth_balance: account balance in ETH
+"""
 def std_mva(df, buy_signals, sell_signals, balance, eth_bal):
     ma_1 = 10
     ma_2 = 30
@@ -179,11 +202,27 @@ def std_mva(df, buy_signals, sell_signals, balance, eth_bal):
     plt.legend(loc='upper left')
     plt.show()
 
+
 # Supporting functions for main strategies #
+
+"""
+calc_rsi is used to calculate a rsi value with the given rs value
+
+rs: ((average gain * period-1) + curr_gain)/((average loss * period-1) + current loss)
+return: a Relative Strength Index value
+"""
 def calc_rsi(rs):
     rsi = 100 - (100/(1+rs))
     return rsi
     
+
+"""
+analyze_trades calculates and prints max, average, and minimum values of all losses
+and profits. Also calculates total trades, percentage of profitable/losing trades made,
+and duration of each position.
+
+trades: list of all complete trades (buy and sell) made
+"""
 def analyze_trades(trades):
     trade_df = pd.DataFrame(trades, columns=['buy_price', 'sell_price', 'difference', 'duration'])
     
