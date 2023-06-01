@@ -8,6 +8,8 @@ import base64
 import pykrakenapi as pyk
 import krakenex
 import matplotlib.pyplot as plt
+from datetime import datetime
+from threading import Timer
 
 """
 kraken_signature is used for verification with the kraken api
@@ -143,23 +145,28 @@ ohlc[0][f'SMA_{5}'] = ohlc[0]['close'].rolling(window=5).mean()
 
 trigger = -1
 sma200 = ohlc[0][f'SMA_{200}'].iloc[-1]
+sma5 = ohlc[0][f'SMA_{5}'].iloc[-1]
 rsi2 = ohlc[0]['rsi-2'].iloc[-1]
 while (1):
     # get current ETH price
     try:
         ethPrice = float((k.get_ticker_information('ETHUSD'))['b'][0][0])
-        print(f'ETH price: {ethPrice} - SMA200: {sma200} - RSI-2: {rsi2}')
+        print(f'ETH price: {ethPrice} - SMA200: {sma200} - SMA5: {sma5} - RSI-2: {rsi2}')
     except Exception as e:
         print(f'Failed to retrieve ETH data: {e}')
 
     # long trade logic
-    if ethPrice > ohlc[0][f'SMA_{200}'].iloc[-1]:
-        if ohlc[0]['rsi-2'].iloc[-1] <= 20 and trigger != 1:
+    if ethPrice > sma200:
+        if rsi2 <= 20 and trigger != 1:
             print("Buy ETH here")
-        elif ohlc[0]['rsi-2'].iloc[-1] > 80 and trigger != -1 and ethPrice > ohlc[0][f'SMA_{5}'].iloc[-1]:
+        elif rsi2 > 80 and trigger != -1 and ethPrice > sma5:
             print("Sell ETH here")
         else:
             print("Do nothing")
+
+    
+    # if time, update rsi and moving averages
+    print(datetime.now().time())
     
     time.sleep(10)
 
