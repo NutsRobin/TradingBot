@@ -9,7 +9,7 @@ import pykrakenapi as pyk
 import krakenex
 import matplotlib.pyplot as plt
 from datetime import datetime
-from threading import Timer
+import schedule
 
 """
 kraken_signature is used for verification with the kraken api
@@ -114,11 +114,28 @@ def rsi_2(ohlc):
 
             avg_gain = ((avg_gain*(period-1)) + gain)/period
             avg_loss = ((avg_loss*(period-1)) + loss)/period
-            rs = avg_gain/avg_loss
+            if avg_loss == 0:
+                rs = 100
+            else:
+                rs = avg_gain/avg_loss
             rsi_vals.append(calc_rsi(rs))
 
     return rsi_vals
 
+"""
+hist_data retireves the ohlc data using the kraken api
+
+return: dataframe of historical data
+"""
+def hist_data():
+    # get public historical data
+    print("Getting ohlc data")
+    try:
+        ohlc = k.get_ohlc_data('ETHUSD', interval=1440, ascending = True,)
+    except Exception as e:
+        print(f'Failed to retrieve OHLC data: {e}')
+    
+    return ohlc
 
 with open('papertest/keys', 'r') as k:
     keys = k.read().splitlines()
@@ -130,24 +147,51 @@ k = pyk.KrakenAPI(api)
 
 api_url = 'https://api.kraken.com'
 
-# get public historical data
-try:
-    ohlc = k.get_ohlc_data('ETHUSD', interval=1440, ascending = True,)
-except Exception as e:
-    print(f'Failed to retrieve OHLC data: {e}')
-
-# get rsi vals
-ohlc[0]['rsi-2'] = rsi_2(ohlc)
-
-# Get moving averages
-ohlc[0][f'SMA_{200}'] = ohlc[0]['close'].rolling(window=200).mean()
-ohlc[0][f'SMA_{5}'] = ohlc[0]['close'].rolling(window=5).mean()
-
 trigger = -1
-sma200 = ohlc[0][f'SMA_{200}'].iloc[-1]
-sma5 = ohlc[0][f'SMA_{5}'].iloc[-1]
-rsi2 = ohlc[0]['rsi-2'].iloc[-1]
 while (1):
+    ohlc = hist_data()
+
+    # get rsi vals
+    ohlc[0]['rsi-2'] = rsi_2(ohlc)
+
+    # Get moving averages
+    ohlc[0][f'SMA_{200}'] = ohlc[0]['close'].rolling(window=200).mean()
+    ohlc[0][f'SMA_{5}'] = ohlc[0]['close'].rolling(window=5).mean()
+
+    sma200 = ohlc[0][f'SMA_{200}'].iloc[-1]
+    sma5 = ohlc[0][f'SMA_{5}'].iloc[-1]
+    rsi2 = ohlc[0]['rsi-2'].iloc[-1]
+
+
+    if ((rsi2 <= 20 and trigger == -1) or (rsi2 > 80 and trigger == 1)):
+        print("trading time")
+        
+        # get current ETH price
+        try:
+            ethPrice = float((k.get_ticker_information('ETHUSD'))['b'][0][0])
+            print(f'ETH price: {ethPrice} - SMA200: {sma200} - SMA5: {sma5} - RSI-2: {rsi2}')
+        except Exception as e:
+            print(f'Failed to retrieve ETH data: {e}')    
+
+        if ethPrice > sma200:
+            if (trigger == -1):
+                print(f'Buying ETH for {ethPrice}')
+                trigger = 1
+            elif (trigger == 1 and ethPrice > sma5):
+                print(f'Selling ETH for {ethPrice}')
+                trigger = -1
+            else:
+                print("Do nothing, check price again in 10 seconds")
+            
+        # after successful trade, break from loop and sleep for the difference in time
+
+    else:
+        # sleep for 24 hours (minus 5 seconds for ohlc time) - 86395
+        print("no trades today, see ya tomorrow!")
+        time.sleep(20)
+    
+
+    """
     # get current ETH price
     try:
         ethPrice = float((k.get_ticker_information('ETHUSD'))['b'][0][0])
@@ -159,16 +203,18 @@ while (1):
     if ethPrice > sma200:
         if rsi2 <= 20 and trigger != 1:
             print("Buy ETH here")
+            trigger = 1
         elif rsi2 > 80 and trigger != -1 and ethPrice > sma5:
             print("Sell ETH here")
+            trigger = -1
         else:
             print("Do nothing")
 
     
     # if time, update rsi and moving averages
     print(datetime.now().time())
-    
     time.sleep(10)
+    """
 
 
 print(ohlc[0].head())
