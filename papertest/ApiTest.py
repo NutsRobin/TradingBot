@@ -161,72 +161,34 @@ while (1):
     sma200 = ohlc[0][f'SMA_{200}'].iloc[-1]
     sma5 = ohlc[0][f'SMA_{5}'].iloc[-1]
     rsi2 = ohlc[0]['rsi-2'].iloc[-1]
-
+    time.sleep(5)
 
     if ((rsi2 <= 20 and trigger == -1) or (rsi2 > 80 and trigger == 1)):
         print("trading time")
-        
-        # get current ETH price
-        try:
-            ethPrice = float((k.get_ticker_information('ETHUSD'))['b'][0][0])
-            print(f'ETH price: {ethPrice} - SMA200: {sma200} - SMA5: {sma5} - RSI-2: {rsi2}')
-        except Exception as e:
-            print(f'Failed to retrieve ETH data: {e}')    
+        total = 0
+        for i in range(8502):
+            # this takes 0.13 seconds
+            # get current ETH price
+            try:
+                ethPrice = float((k.get_ticker_information('ETHUSD'))['b'][0][0])
+                print(f'ETH price: {ethPrice} - SMA200: {sma200} - SMA5: {sma5} - RSI-2: {rsi2}')
+            except Exception as e:
+                print(f'Failed to retrieve ETH data: {e}')    
 
-        if ethPrice > sma200:
-            if (trigger == -1):
-                print(f'Buying ETH for {ethPrice}')
-                trigger = 1
-            elif (trigger == 1 and ethPrice > sma5):
-                print(f'Selling ETH for {ethPrice}')
-                trigger = -1
-            else:
-                print("Do nothing, check price again in 10 seconds")
+            if ethPrice > sma200:
+                if (trigger == -1):
+                    print(f'Buying ETH for {ethPrice}')
+                    trigger = 1
+                    time.sleep(10.16*(8502-i))
+                elif (trigger == 1 and ethPrice > sma5):
+                    print(f'Selling ETH for {ethPrice}')
+                    trigger = -1
+                    time.sleep(10.16*(8502-i))
+                else:
+                    print("Do nothing, check price again in 10 seconds")
+            time.sleep(10)
             
-        # after successful trade, break from loop and sleep for the difference in time
-
     else:
         # sleep for 24 hours (minus 5 seconds for ohlc time) - 86395
         print("no trades today, see ya tomorrow!")
-        time.sleep(20)
-    
-
-    """
-    # get current ETH price
-    try:
-        ethPrice = float((k.get_ticker_information('ETHUSD'))['b'][0][0])
-        print(f'ETH price: {ethPrice} - SMA200: {sma200} - SMA5: {sma5} - RSI-2: {rsi2}')
-    except Exception as e:
-        print(f'Failed to retrieve ETH data: {e}')
-
-    # long trade logic
-    if ethPrice > sma200:
-        if rsi2 <= 20 and trigger != 1:
-            print("Buy ETH here")
-            trigger = 1
-        elif rsi2 > 80 and trigger != -1 and ethPrice > sma5:
-            print("Sell ETH here")
-            trigger = -1
-        else:
-            print("Do nothing")
-
-    
-    # if time, update rsi and moving averages
-    print(datetime.now().time())
-    time.sleep(10)
-    """
-
-
-print(ohlc[0].head())
-
-# plot moving averages, RSI, and closing value
-plt.style.use('dark_background')
-fig, axs = plt.subplots(2)
-axs[0].plot(ohlc[0]['close'], label='Share Price', alpha=0.5)
-axs[0].plot(ohlc[0][f'SMA_{200}'], label=f'SMA_{200}', color='orange')
-axs[0].plot(ohlc[0][f'SMA_{5}'], label=f'SMA_{5}', color='purple', linestyle='--')
-axs[1].plot(ohlc[0]['rsi-2'], label='RSI', color='pink', linestyle='--')
-axs[1].axhline(y=80, label='RSI HIGH', color='blue', linestyle='--')
-axs[1].axhline(y=20, label='RSI LOW', color='orange', linestyle='--')
-fig.legend(loc='upper left')
-plt.show()
+        time.sleep(86395)
