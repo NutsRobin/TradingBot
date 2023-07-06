@@ -18,3 +18,6 @@ ApiTest is used to "paper trade" i.e test the strategy on live data without usin
 The current version of ApiTest is not at full functionality.
 
 ApiTest usage: python3 papertest/ApiTest.py
+
+## LiveBot.py
+LiveBot is the live version. It is currently a modifed ApiTest that will be able make real trades.
