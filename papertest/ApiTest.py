@@ -7,9 +7,6 @@ import hmac
 import base64
 import pykrakenapi as pyk
 import krakenex
-import matplotlib.pyplot as plt
-from datetime import datetime
-import schedule
 
 """
 kraken_signature is used for verification with the kraken api
@@ -171,21 +168,19 @@ while (1):
             # get current ETH price
             try:
                 ethPrice = float((k.get_ticker_information('ETHUSD'))['b'][0][0])
-                print(f'ETH price: {ethPrice} - SMA200: {sma200} - SMA5: {sma5} - RSI-2: {rsi2}')
+                #print(f'ETH price: {ethPrice} - SMA200: {sma200} - SMA5: {sma5} - RSI-2: {rsi2}')
             except Exception as e:
                 print(f'Failed to retrieve ETH data: {e}')    
 
             if ethPrice > sma200:
                 if (trigger == -1):
-                    print(f'Buying ETH for {ethPrice}')
+                    print(f'***Buying ETH for {ethPrice}***')
                     trigger = 1
                     time.sleep(10.16*(8502-i))
                 elif (trigger == 1 and ethPrice > sma5):
-                    print(f'Selling ETH for {ethPrice}')
+                    print(f'***Selling ETH for {ethPrice}***')
                     trigger = -1
                     time.sleep(10.16*(8502-i))
-                else:
-                    print("Do nothing, check price again in 10 seconds")
             time.sleep(10)
             
     else:
