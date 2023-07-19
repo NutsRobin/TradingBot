@@ -7,6 +7,7 @@ import hmac
 import base64
 import pykrakenapi as pyk
 import krakenex
+from datetime import datetime
 
 """
 kraken_signature is used for verification with the kraken api
@@ -134,6 +135,19 @@ def hist_data():
     
     return ohlc
 
+
+"""
+get_acc_bal fetches and returns the kraken account balance
+
+return: account balances in json format
+"""
+def get_acc_bal():
+    resp = gen_request('/0/private/Balance', {
+        "nonce": str(int(1000 * time.time()))
+    }, api_key, api_sec)
+
+    return resp.json()
+
 """
 buy_eth() places a limit order for eth with the limit set to 3+ the ETH price
 
@@ -151,8 +165,9 @@ def buy_eth(balance, ethPrice):
         "pair":      "ETHUSD",
         "price":     +3, 
     }, api_key, api_sec)
+    print(f'***Buying ETH for {ethPrice}***')
 
-    return resp
+    return resp.json()
 
 """
 sell_eth() places a limit order for eth with the limit set to -3 the ETH price
@@ -170,8 +185,9 @@ def sell_eth(ethBalance):
         "pair":      "ETHUSD",
         "price":     -3, 
     }, api_key, api_sec)
+    print(f'***Selling ETH for {ethPrice}***')
 
-    return resp
+    return resp.json()
 
 with open('ethBot/keys', 'r') as k:
     keys = k.read().splitlines()
@@ -199,6 +215,7 @@ while (1):
     rsi2 = ohlc[0]['rsi-2'].iloc[-1]
     time.sleep(5)
 
+    print(f'Account balances: {get_acc_bal()["result"]} - {datetime.now()}')
     if ((rsi2 <= 20 and trigger == -1) or (rsi2 > 80 and trigger == 1)):
         print("trading time")
         total = 0
@@ -213,13 +230,32 @@ while (1):
 
             if ethPrice > sma200:
                 if (trigger == -1):
-                    print(f'***Buying ETH for {ethPrice}***')
-                    trigger = 1
-                    time.sleep(10.16*(8502-i))
+                    try:
+                        buy_rsp = buy_eth(get_acc_bal()['result']['ZUSD'], ethPrice)
+                    except Exception as e:
+                        print(f'Failed to buy ETH: {e}')
+
+                    if len(buy_rsp['error']) == 0:
+                        print(f'Successfully bough ETH - {datetime.now()}')
+                        trigger = 1
+                        time.sleep(10.16*(8502-i))
+                    else:
+                        print(buy_rsp['error'])
+                        trigger = -1
+
                 elif (trigger == 1 and ethPrice > sma5):
-                    print(f'***Selling ETH for {ethPrice}***')
-                    trigger = -1
-                    time.sleep(10.16*(8502-i))
+                    try:
+                        sell_rsp = sell_eth(get_acc_bal()['result']['XETH'])
+                    except Exception as e:
+                        print(f'Failed to sell ETH {e}')
+                    
+                    if len(sell_rsp['error']) == 0:
+                        print(f'Successfully sold ETH - {datetime.time()}')
+                        trigger = -1
+                        time.sleep(10.16*(8502-i))
+                    else:
+                        print(sell_rsp['error'])
+                        trigger = 1
             time.sleep(10)
             
     else:
