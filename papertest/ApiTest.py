@@ -1,5 +1,6 @@
 # Using this to test API implementation and eventually paper testing #
 import time
+from datetime import datetime
 import requests
 import urllib.parse
 import hashlib
@@ -145,6 +146,8 @@ k = pyk.KrakenAPI(api)
 api_url = 'https://api.kraken.com'
 
 trigger = -1
+usdBalance = 1000
+ethBalance = 0
 while (1):
     ohlc = hist_data()
 
@@ -175,10 +178,20 @@ while (1):
             if ethPrice > sma200:
                 if (trigger == -1):
                     print(f'***Buying ETH for {ethPrice}***')
+
+                    ethBalance = usdBalance/ethPrice
+                    usdBalance = 0
+                    with open('trades.txt', 'w') as trades:
+                        trades.write(f'{datetime.now()},{ethPrice},nan,{ethBalance},{usdBalance}')
                     trigger = 1
                     time.sleep(10.16*(8502-i))
                 elif (trigger == 1 and ethPrice > sma5):
                     print(f'***Selling ETH for {ethPrice}***')
+
+                    usdBalance = ethBalance*ethPrice
+                    ethBalance = 0
+                    with open('trades.txt', 'w') as trades:
+                        trades.write(f'{datetime.now()},nan,{ethPrice},{ethBalance},{usdBalance}')
                     trigger = -1
                     time.sleep(10.16*(8502-i))
             time.sleep(10)
